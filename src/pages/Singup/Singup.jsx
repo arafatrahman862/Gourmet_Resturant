@@ -25,7 +25,7 @@ const Singup = () => {
                 updateUserProfile(data.name, data.photoURL)
                     .then(() => {
                         const saveUser = { name: data.name, email: data.email }
-                        fetch('http://localhost:5000/users', {
+                        fetch('https://gourmet-resturant-server-side.vercel.app/users', {
                             method: 'POST',
                             headers: {
                                 'content-type': 'application/json'
@@ -63,9 +63,9 @@ const Singup = () => {
                     <div className="hero-content flex-col lg:flex-row px-24">
                         <div className="text-center lg:text-left">
                             <h1 className="text-5xl font-bold text-center pb-4">Sign up now!</h1>
-                           <div className='w-[70%]'>
-                           <Lottie  animationData={singup} loop={true} />
-                           </div>
+                            <div className='w-[70%]'>
+                                <Lottie animationData={singup} loop={true} />
+                            </div>
                         </div>
                         <div className="card flex-shrink-0 w-full max-w-sm shadow-2xl bg-base-100">
                             <form onSubmit={handleSubmit(onSubmit)} className="card-body">

@@ -8,32 +8,32 @@ import useAxiosSecure from '../../../hooks/useAxiosSecure';
 const AllUsers = () => {
     const [axiosSecure] = useAxiosSecure();
     const { data: users = [], refetch } = useQuery({
-        
-        queryKey: ['users'], 
+
+        queryKey: ['users'],
         queryFn: async () => {
-        const res = await axiosSecure.get('/users')
-        return res.data;
-         }
+            const res = await axiosSecure.get('/users')
+            return res.data;
+        }
     })
 
-    const handleMakeAdmin = user =>{
-        fetch(`http://localhost:5000/users/admin/${user._id}`, {
+    const handleMakeAdmin = user => {
+        fetch(`https://gourmet-resturant-server-side.vercel.app/users/admin/${user._id}`, {
             method: 'PATCH'
         })
-        .then(res => res.json())
-        .then(data => {
-            console.log(data)
-            if(data.modifiedCount){
-                refetch();
-                Swal.fire({
-                    position: 'top-end',
-                    icon: 'success',
-                    title: `${user.name} is an Admin Now!`,
-                    showConfirmButton: false,
-                    timer: 1500
-                  })
-            }
-        })
+            .then(res => res.json())
+            .then(data => {
+                console.log(data)
+                if (data.modifiedCount) {
+                    refetch();
+                    Swal.fire({
+                        position: 'top-end',
+                        icon: 'success',
+                        title: `${user.name} is an Admin Now!`,
+                        showConfirmButton: false,
+                        timer: 1500
+                    })
+                }
+            })
     }
 
     const handleDelete = user => {
@@ -47,7 +47,7 @@ const AllUsers = () => {
             confirmButtonText: 'Yes, delete it!'
         }).then((result) => {
             if (result.isConfirmed) {
-                fetch(`http://localhost:5000/users/${user._id}`, {
+                fetch(`https://gourmet-resturant-server-side.vercel.app/users/${user._id}`, {
                     method: 'DELETE'
                 })
                     .then(res => res.json())
