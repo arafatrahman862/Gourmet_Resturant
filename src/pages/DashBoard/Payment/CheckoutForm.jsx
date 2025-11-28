@@ -1,131 +1,160 @@
-import React from 'react';
+import React, { useEffect, useState } from "react";
 import { CardElement, useElements, useStripe } from "@stripe/react-stripe-js";
-import { useEffect } from "react";
-import { useState } from "react";
-import useAxiosSecure from '../../../hooks/useAxiosSecure';
-import useAuth from '../../../hooks/useAuth';
-import './CheckoutForm.css'
+import useAxiosSecure from "../../../hooks/useAxiosSecure";
+import useAuth from "../../../hooks/useAuth";
+import "./CheckoutForm.css";
 
 const CheckoutForm = ({ cart, price }) => {
     const stripe = useStripe();
     const elements = useElements();
     const { user } = useAuth();
-    const [axiosSecure] = useAxiosSecure()
-    const [cardError, setCardError] = useState('');
-    const [clientSecret, setClientSecret] = useState('');
+    const [axiosSecure] = useAxiosSecure();
+
+    const [cardError, setCardError] = useState("");
+    const [clientSecret, setClientSecret] = useState("");
     const [processing, setProcessing] = useState(false);
-    const [transactionId, setTransactionId] = useState('');
+    const [transactionId, setTransactionId] = useState("");
 
     useEffect(() => {
         if (price > 0) {
-            axiosSecure.post('/create-payment-intent', { price })
-                .then(res => {
-                    console.log(res.data.clientSecret)
-                    setClientSecret(res.data.clientSecret);
-                })
+            axiosSecure.post("/create-payment-intent", { price }).then((res) => {
+                setClientSecret(res.data.clientSecret);
+            });
         }
-    }, [price, axiosSecure])
-
+    }, [price, axiosSecure]);
 
     const handleSubmit = async (event) => {
         event.preventDefault();
 
-        if (!stripe || !elements) {
-            return
-        }
+        if (!stripe || !elements) return;
 
         const card = elements.getElement(CardElement);
-        if (card === null) {
-            return
-        }
+        if (!card) return;
 
+        // Create payment method
         const { error } = await stripe.createPaymentMethod({
-            type: 'card',
-            card
-        })
+            type: "card",
+            card,
+        });
 
         if (error) {
-            console.log('error', error)
             setCardError(error.message);
-        }
-        else {
-            setCardError('');
-            // console.log('payment method', paymentMethod)
+        } else {
+            setCardError("");
         }
 
-        setProcessing(true)
+        setProcessing(true);
 
-        const { paymentIntent, error: confirmError } = await stripe.confirmCardPayment(
-            clientSecret,
-            {
+        // Confirm payment
+        const { paymentIntent, error: confirmError } =
+            await stripe.confirmCardPayment(clientSecret, {
                 payment_method: {
-                    card: card,
+                    card,
                     billing_details: {
-                        email: user?.email || 'unknown',
-                        name: user?.displayName || 'anonymous'
+                        email: user?.email || "unknown",
+                        name: user?.displayName || "anonymous",
                     },
                 },
-            },
-        );
+            });
+
+        setProcessing(false);
 
         if (confirmError) {
             console.log(confirmError);
+            return;
         }
 
-        console.log('payment intent', paymentIntent)
-        setProcessing(false)
-        if (paymentIntent.status === 'succeeded') {
+        // PAYMENT SUCCESSFUL
+        if (paymentIntent?.status === "succeeded") {
             setTransactionId(paymentIntent.id);
-            // save payment information to the server
+
             const payment = {
                 email: user?.email,
                 transactionId: paymentIntent.id,
                 price,
                 date: new Date(),
                 quantity: cart.length,
-                cartItems: cart.map(item => item._id),
-                menuItems: cart.map(item => item.menuItemId),
-                status: 'service pending',
-                itemNames: cart.map(item => item.name),
-                name: user?.displayName
-            }
-            axiosSecure.post('/payments', payment)
-                .then(res => {
-                    console.log(res.data);
-                    if (res.data.result.insertedId) {
-                        // display confirm
-                    }
-                })
+                cartItems: cart.map((i) => i._id),
+                menuItems: cart.map((i) => i.menuItemId),
+                itemNames: cart.map((i) => i.name),
+                status: "service pending",
+                name: user?.displayName,
+            };
+
+            axiosSecure.post("/payments", payment).then((res) => {
+                console.log(res.data);
+            });
         }
+    };
 
-
-    }
     return (
-        <>
-            <form className="w-2/3 m-8 pt-8" onSubmit={handleSubmit}>
-                <CardElement
-                    options={{
-                        style: {
-                            base: {
-                                fontSize: '16px',
-                                color: '#424770',
-                                '::placeholder': {
-                                    color: '#aab7c4',
+        <div className="flex flex-col items-center w-full mt-10">
+
+            {/* PAYMENT CARD CONTAINER */}
+            <div className="w-full max-w-xl p-8 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl">
+
+                <h2 className="text-3xl font-bold text-white text-center mb-6">
+                    Complete Your Payment
+                </h2>
+
+                {/* PAYMENT FORM */}
+                <form onSubmit={handleSubmit} className="space-y-6">
+
+                    {/* Stripe Card Input */}
+                    <div className="stripe-box">
+                        <CardElement
+                            options={{
+                                style: {
+                                    base: {
+                                        fontSize: "18px",
+                                        color: "#ffffff",
+                                        iconColor: "#ffffff",
+                                        "::placeholder": {
+                                            color: "#9CA3AF",
+                                        },
+                                    },
+                                    invalid: {
+                                        color: "#ff6b6b",
+                                        iconColor: "#ff6b6b",
+                                    },
                                 },
-                            },
-                            invalid: {
-                                color: '#9e2146',
-                            },
-                        },
-                    }}
-                />
-                <button className="btn btn-outline btn-sm mt-4 hover:-translate-y-2 hover:bg-green-300  " type="submit" disabled={!stripe || !clientSecret || processing}>
-                    Pay
-                </button>
-            </form>
-            {cardError && <p className="text-red-600 ml-8">{cardError}</p>}
-            {transactionId && <p className="text-green-500 border-2 border-red-500 p-4 rounded-lg hover:bg-blue-100  transition-all duration-300 hover:-translate-y-2">Transaction complete with transactionId: {transactionId}</p>}
-        </>
+                            }}
+                        />
+                    </div>
+
+                    {/* Pay Button */}
+                    <button
+                        type="submit"
+                        disabled={!stripe || !clientSecret || processing}
+                        className={`w-full py-3 rounded-xl text-white font-semibold transition-all shadow-lg 
+                            ${processing
+                                ? "bg-gray-500 cursor-not-allowed"
+                                : "bg-blue-600 hover:bg-blue-700 hover:-translate-y-1"
+                            }`}
+                    >
+                        {processing ? "Processing..." : "Pay Now"}
+                    </button>
+                </form>
+
+                {/* Error Message */}
+                {cardError && (
+                    <p className="mt-4 text-red-400 text-center font-medium">
+                        {cardError}
+                    </p>
+                )}
+
+                {/* Success Message */}
+                {transactionId && (
+                    <div className="mt-6 p-4 text-center text-green-300 font-semibold border border-green-500/30 rounded-xl bg-green-500/10 hover:bg-green-500/20 transition-all shadow-md">
+                        Payment Successful!
+                        <br />
+                        <span className="text-green-400 text-sm">
+                            Transaction ID: {transactionId}
+                        </span>
+                    </div>
+                )}
+            </div>
+        </div>
     );
 };
 

@@ -1,125 +1,197 @@
-import React from 'react';
-import { useContext } from "react";
+import React, { useContext } from "react";
 import { Helmet } from "react-helmet-async";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
-import Swal from 'sweetalert2'
-import { AuthContext } from '../../providers/AuthProvider';
-import SocialLogin from '../../shared/SocialLogin/SocialLogin';
-import singup from '../../../public/singup.json'
-import Lottie from 'lottie-react';
+import Swal from "sweetalert2";
+import { AuthContext } from "../../providers/AuthProvider";
+import SocialLogin from "../../shared/SocialLogin/SocialLogin";
+import Lottie from "lottie-react";
+import singup from "../../../public/singup.json";
 
-const Singup = () => {
+const Signup = () => {
     const { register, handleSubmit, reset, formState: { errors } } = useForm();
     const { createUser, updateUserProfile } = useContext(AuthContext);
     const navigate = useNavigate();
 
     const onSubmit = data => {
-
         createUser(data.email, data.password)
             .then(result => {
-
                 const loggedUser = result.user;
-                console.log(loggedUser);
 
                 updateUserProfile(data.name, data.photoURL)
                     .then(() => {
-                        const saveUser = { name: data.name, email: data.email }
-                        fetch('https://gourmet-resturant-server-side.vercel.app/users', {
-                            method: 'POST',
+                        const saveUser = { name: data.name, email: data.email };
+
+                        fetch("https://gourmet-resturant-server-side.vercel.app/users", {
+                            method: "POST",
                             headers: {
-                                'content-type': 'application/json'
+                                "content-type": "application/json"
                             },
                             body: JSON.stringify(saveUser)
                         })
                             .then(res => res.json())
-                            .then(data => {
-                                if (data.insertedId) {
-                                    reset();
-                                    Swal.fire({
-                                        position: 'top-end',
-                                        icon: 'success',
-                                        title: 'User created successfully.',
-                                        showConfirmButton: false,
-                                        timer: 1500
-                                    });
-                                    navigate('/');
-                                }
-                            })
-
-
-
-                    })
-                    .catch(error => console.log(error))
+                            .then(() => {
+                                Swal.fire({
+                                    icon: "success",
+                                    title: "Signup Successful!",
+                                    timer: 1500,
+                                    showConfirmButton: false,
+                                });
+                                navigate("/");
+                            });
+                    });
             })
+            .catch(error => {
+                console.error("Signup Error:", error);
+
+                if (error.code === "auth/email-already-in-use") {
+                    Swal.fire({
+                        icon: "error",
+                        title: "Email Already Registered",
+                        text: "Please login instead or use another email.",
+                    });
+                } else {
+                    Swal.fire({
+                        icon: "error",
+                        title: "Signup Failed",
+                        text: error.message,
+                    });
+                }
+            });
     };
+
+
     return (
-        <div>
-            <>
-                <Helmet>
-                    <title>GOURMET | Sign Up</title>
-                </Helmet>
-                <div className="hero min-h-screen bg-base-200">
-                    <div className="hero-content flex-col lg:flex-row px-24">
-                        <div className="text-center lg:text-left">
-                            <h1 className="text-5xl font-bold text-center pb-4">Sign up now!</h1>
-                            <div className='w-[70%]'>
-                                <Lottie animationData={singup} loop={true} />
-                            </div>
-                        </div>
-                        <div className="card flex-shrink-0 w-full max-w-sm shadow-2xl bg-base-100">
-                            <form onSubmit={handleSubmit(onSubmit)} className="card-body">
-                                <div className="form-control">
-                                    <label className="label">
-                                        <span className="label-text">Name</span>
-                                    </label>
-                                    <input type="text"  {...register("name", { required: true })} name="name" placeholder="Name" className="input input-bordered" />
-                                    {errors.name && <span className="text-red-600">Name is required</span>}
-                                </div>
-                                <div className="form-control">
-                                    <label className="label">
-                                        <span className="label-text">Photo URL</span>
-                                    </label>
-                                    <input type="text"  {...register("photoURL", { required: true })} placeholder="Photo URL" className="input input-bordered" />
-                                    {errors.photoURL && <span className="text-red-600">Photo URL is required</span>}
-                                </div>
-                                <div className="form-control">
-                                    <label className="label">
-                                        <span className="label-text">Email</span>
-                                    </label>
-                                    <input type="email"  {...register("email", { required: true })} name="email" placeholder="email" className="input input-bordered" />
-                                    {errors.email && <span className="text-red-600">Email is required</span>}
-                                </div>
-                                <div className="form-control">
-                                    <label className="label">
-                                        <span className="label-text">Password</span>
-                                    </label>
-                                    <input type="password"  {...register("password", {
-                                        required: true,
-                                        minLength: 6,
-                                        maxLength: 20,
-                                        pattern: /(?=.*[A-Z])(?=.*[!@#$&*])(?=.*[0-9])(?=.*[a-z])/
-                                    })} placeholder="password" className="input input-bordered" />
-                                    {errors.password?.type === 'required' && <p className="text-red-600">Password is required</p>}
-                                    {errors.password?.type === 'minLength' && <p className="text-red-600">Password must be 6 characters</p>}
-                                    {errors.password?.type === 'maxLength' && <p className="text-red-600">Password must be less than 20 characters</p>}
-                                    {errors.password?.type === 'pattern' && <p className="text-red-600">Password must have one Uppercase one lower case, one number and one special character.</p>}
-                                    <label className="label">
-                                        <a href="#" className="label-text-alt link link-hover">Forgot password?</a>
-                                    </label>
-                                </div>
-                                <div className="form-control mt-6">
-                                    <input className="btn btn-primary" type="submit" value="Sign Up" />
-                                </div>
-                            </form>
-                            <p className='px-6'><small>Already have an account? <Link to="/login"><span className='text-blue-600 hover:underline'>Login</span></Link></small></p>
-                            <SocialLogin></SocialLogin>
+        <>
+            <Helmet>
+                <title>GOURMET | Sign Up</title>
+            </Helmet>
+
+            {/* MAIN BACKGROUND */}
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#1a1c23] via-[#252932] to-[#1a1c23] px-4 py-14">
+
+                {/* MAIN CONTAINER */}
+                <div className="flex flex-col lg:flex-row items-center gap-12 max-w-6xl w-full">
+
+                    {/* LEFT SIDE */}
+                    <div className="lg:w-1/2 text-center lg:text-left">
+                        <h1 className="text-5xl font-extrabold text-white drop-shadow-lg mb-4">
+                            Create Account ✨
+                        </h1>
+                        <p className="text-gray-300 text-lg mb-4">
+                            Join <span className="font-bold text-blue-400">Gourmet</span> and explore exclusive culinary experiences.
+                        </p>
+
+                        <div className="max-w-md mx-auto">
+                            <Lottie animationData={singup} loop={true} />
                         </div>
                     </div>
+
+                    {/* SIGNUP CARD */}
+                    <div className="lg:w-1/2 w-full max-w-md">
+                        <div className="backdrop-blur-xl bg-white/10 border border-white/20 shadow-xl rounded-2xl p-8">
+
+                            <h2 className="text-3xl font-bold text-center text-white mb-6">
+                                Sign Up
+                            </h2>
+
+                            <form onSubmit={handleSubmit(onSubmit)}>
+
+                                {/* Name */}
+                                <div className="mb-4">
+                                    <label className="text-white font-medium">Name</label>
+                                    <input
+                                        type="text"
+                                        {...register("name", { required: true })}
+                                        placeholder="Your Name"
+                                        className="input input-bordered w-full bg-white/20 text-white border-white/30 placeholder-gray-300"
+                                    />
+                                    {errors.name && <p className="text-red-400 mt-1">Name is required</p>}
+                                </div>
+
+                                {/* Photo URL */}
+                                <div className="mb-4">
+                                    <label className="text-white font-medium">Photo URL</label>
+                                    <input
+                                        type="text"
+                                        {...register("photoURL", { required: true })}
+                                        placeholder="Enter Photo URL"
+                                        className="input input-bordered w-full bg-white/20 text-white border-white/30 placeholder-gray-300"
+                                    />
+                                    {errors.photoURL && <p className="text-red-400 mt-1">Photo URL is required</p>}
+                                </div>
+
+                                {/* Email */}
+                                <div className="mb-4">
+                                    <label className="text-white font-medium">Email</label>
+                                    <input
+                                        type="email"
+                                        {...register("email", { required: true })}
+                                        placeholder="Email"
+                                        className="input input-bordered w-full bg-white/20 text-white border-white/30 placeholder-gray-300"
+                                    />
+                                    {errors.email && <p className="text-red-400 mt-1">Email is required</p>}
+                                </div>
+
+                                {/* Password */}
+                                <div className="mb-4">
+                                    <label className="text-white font-medium">Password</label>
+                                    <input
+                                        type="password"
+                                        {...register("password", {
+                                            required: true,
+                                            minLength: 6,
+                                            maxLength: 20,
+                                            pattern: /(?=.*[A-Z])(?=.*[!@#$&*])(?=.*[0-9])(?=.*[a-z])/,
+                                        })}
+                                        placeholder="Password"
+                                        className="input input-bordered w-full bg-white/20 text-white border-white/30 placeholder-gray-300"
+                                    />
+
+                                    {/* Validation Messages */}
+                                    {errors.password?.type === "required" && (
+                                        <p className="text-red-400 mt-1">Password is required</p>
+                                    )}
+                                    {errors.password?.type === "minLength" && (
+                                        <p className="text-red-400 mt-1">Password must be at least 6 characters</p>
+                                    )}
+                                    {errors.password?.type === "maxLength" && (
+                                        <p className="text-red-400 mt-1">Password cannot exceed 20 characters</p>
+                                    )}
+                                    {errors.password?.type === "pattern" && (
+                                        <p className="text-red-400 mt-1">
+                                            Password must include uppercase, lowercase, number, and special character.
+                                        </p>
+                                    )}
+                                </div>
+
+                                {/* Submit Button */}
+                                <button
+                                    type="submit"
+                                    className="btn w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold mt-4 transition-all"
+                                >
+                                    Sign Up
+                                </button>
+                            </form>
+
+                            {/* Already have account? */}
+                            <p className="text-center text-gray-300 mt-4">
+                                Already have an account?{" "}
+                                <Link to="/login" className="text-blue-400 hover:underline">
+                                    Login
+                                </Link>
+                            </p>
+
+                            <div className="mt-6">
+                                <SocialLogin />
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
-            </>
-        </div>
+            </div>
+        </>
     );
 };
 
-export default Singup;
+export default Signup;

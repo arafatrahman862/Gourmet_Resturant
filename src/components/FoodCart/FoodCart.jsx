@@ -1,9 +1,8 @@
-import React from 'react';
-import { useContext } from 'react';
-import { AuthContext } from '../../providers/AuthProvider';
-import Swal from 'sweetalert2';
-import { useLocation, useNavigate } from 'react-router-dom';
-import useCart from '../../hooks/useCart';
+import React, { useContext } from "react";
+import { AuthContext } from "../../providers/AuthProvider";
+import Swal from "sweetalert2";
+import { useLocation, useNavigate } from "react-router-dom";
+import useCart from "../../hooks/useCart";
 
 const FoodCart = ({ item }) => {
     const { name, image, price, recipe, _id } = item;
@@ -12,56 +11,127 @@ const FoodCart = ({ item }) => {
     const navigate = useNavigate();
     const location = useLocation();
 
-    const handleAddToCart = item => {
-        // console.log(item);
+    const handleAddToCart = (item) => {
         if (user && user.email) {
-            const cartItem = { menuItemId: _id, name, image, price, email: user.email }
-            fetch('https://gourmet-resturant-server-side.vercel.app/carts', {
-                method: 'POST',
+            const cartItem = {
+                menuItemId: _id,
+                name,
+                image,
+                price,
+                email: user.email,
+            };
+
+            fetch("https://gourmet-resturant-server-side.vercel.app/carts", {
+                method: "POST",
                 headers: {
-                    'content-type': 'application/json'
+                    "content-type": "application/json",
                 },
-                body: JSON.stringify(cartItem)
+                body: JSON.stringify(cartItem),
             })
-                .then(res => res.json())
-                .then(data => {
+                .then((res) => res.json())
+                .then((data) => {
                     if (data.insertedId) {
-                        refetch(); // refetch cart to update the number of items in the cart
+                        refetch();
                         Swal.fire({
-                            position: 'top-end',
-                            icon: 'success',
-                            title: 'Food added on the cart.',
+                            position: "top-end",
+                            icon: "success",
+                            title: "Food added to your cart!",
                             showConfirmButton: false,
-                            timer: 1500
-                        })
+                            timer: 1500,
+                        });
                     }
-                })
-        }
-        else {
+                });
+        } else {
             Swal.fire({
-                title: 'Please login to order the food',
-                icon: 'warning',
+                title: "Please login to order food",
+                icon: "warning",
                 showCancelButton: true,
-                confirmButtonColor: '#3085d6',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Login now!'
+                confirmButtonColor: "#3085d6",
+                cancelButtonColor: "#d33",
+                confirmButtonText: "Login now",
             }).then((result) => {
                 if (result.isConfirmed) {
-                    navigate('/login', { state: { from: location } })
+                    navigate("/login", { state: { from: location } });
                 }
-            })
+            });
         }
-    }
+    };
+
     return (
-        <div className="card transition-all duration-300 hover:scale-95 w-96 bg-base-100 shadow-xl">
-            <figure><img className='hover:scale-105 transition-all duration-300 ' src={image} alt="Shoes" /></figure>
-            <p className="absolute right-0 mr-4 mt-4 px-4 badge badge-accent">${price}</p>
-            <div className="card-body flex flex-col items-center">
-                <h2 className="card-title">{name}</h2>
-                <p>{recipe}</p>
-                <div className="card-actions justify-end">
-                    <button onClick={() => handleAddToCart(item)} className="btn btn-outline hover:-translate-y-4 bg-slate-100 transition-all duration-300 border-0 border-b-4 border-orange-400 mt-4">Add to Cart</button>
-                </div>
+        <div
+            className="
+                bg-white/10 
+                backdrop-blur-xl 
+                border border-white/20 
+                rounded-xl 
+                shadow-xl 
+                p-4 
+                flex 
+                flex-col 
+                justify-between
+                transition-all
+                hover:scale-[1.02]
+            "
+        >
+            {/* IMAGE */}
+            <div className="relative">
+                <img
+                    src={image}
+                    alt={name}
+                    className="
+                        w-full 
+                        h-48 
+                        object-cover 
+                        rounded-lg 
+                        shadow-md
+                        mb-4
+                    "
+                />
+
+                {/* PRICE BADGE */}
+                <p
+                    className="
+                        absolute 
+                        top-3 
+                        right-3 
+                        bg-red-500 
+                        text-white 
+                        py-1 
+                        px-3 
+                        rounded-full 
+                        text-sm 
+                        shadow-lg
+                    "
+                >
+                    ${price}
+                </p>
+            </div>
+
+            {/* CONTENT */}
+            <div className="flex flex-col items-center text-center px-2">
+                <h3 className="text-lg font-semibold text-white">{name}</h3>
+
+                <p className="text-gray-300 text-sm mt-2 mb-4">
+                    {recipe}
+                </p>
+
+                {/* ADD TO CART BUTTON */}
+                <button
+                    onClick={() => handleAddToCart(item)}
+                    className="
+                        w-full
+                        py-2 
+                        bg-orange-500 
+                        text-white 
+                        rounded-lg 
+                        font-semibold 
+                        hover:bg-orange-600 
+                        hover:-translate-y-1
+                        transition-all
+                    "
+                >
+                    Add to Cart
+                </button>
             </div>
         </div>
     );
